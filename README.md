@@ -22,7 +22,7 @@ are uploaded.  Checkouts that reference media you don't have yet will try to
 be automatically downloaded, otherwise they are downloaded when you sync.
 
 Next you need to configure git to tell it where you want to store the large files.
-There are four options:
+There are five options:
 
 1. Storing remotely in Amazon's S3
 2. Storing locally in a filesystem path
@@ -30,13 +30,14 @@ There are four options:
 4. Storing remotely in atmos
 5. Storing remotely in Google Drive
 6. Storing remotely in a Hash Stash
+7. Storing remotely via WebDav
 
 Here are the relevant sections that should go either in `~/.gitconfig` (for global settings)
 or in `clone/.git/config` (for per-repo settings).
 
 ```ini
 [git-media]
-	transport = <scp|local|s3|atmos|drive|hashstash>
+	transport = <scp|local|s3|atmos|drive|hashstash|webdav>
 
 	# settings for scp transport
 	scpuser = <user>
@@ -44,7 +45,7 @@ or in `clone/.git/config` (for per-repo settings).
 	scppath = <path_on_remote_server>
 
 	# settings for local transport
-	path = <local_filesystem_path>
+	localpath = <local_filesystem_path>
 
 	# settings for s3 transport
 	s3bucket = <name_of_bucket>
@@ -66,6 +67,15 @@ or in `clone/.git/config` (for per-repo settings).
 	host	= <hashstash server>
 	port	= <hashstash port>
 
+	# settings for webdav transport
+	webdavurl = <webdav root url>
+	# user and password are taken from netrc if omitted
+	webdavuser = <user for basic auth, optional>
+	webdavpassword = <password for basic auth>
+
+	webdavverifyserver = <Net::Dav.verify_server setting, true by default>
+	webdavbinarytransfer = <Net::Dav.new :curl option value, false by default>
+	
 ```
 
 
@@ -84,20 +94,28 @@ that is. If you want to upload & delete the local cache of media files, run:
 
   $ git media clear
 
+If you want to replace file in git-media with changed version (for example, video file has been edited),
+you need to explicitly tell git that some media files has changed:
+
+    $ git update-index --really-refresh
+
+
 ## Config Settings
 
-  $ git config --global media.auto-download false
+If autodownload is set to true, required files will automatically be
+downloaded when checking out or pulling. Default is false
+
+	$ git config --global media.autodownload true
 
 
 ## Installing
 
-    $ sudo gem install trollop
-    $ sudo gem install s3
-    $ sudo gem install google_drive
-    $ sudo gem install ruby-atmos-pure
-    $ sudo gem install right_aws
+    $ git clone git@github.com:alebedev/git-media.git
+    $ cd git-media
+    $ sudo gem install bundler
+    $ bundle install
     $ gem build git-media.gemspec
-    $ sudo gem install git-media-0.1.7.gem
+    $ sudo gem install git-media-*.gem
 
 ## Notes for Windows
 
@@ -105,13 +123,8 @@ It is important to switch off git smart newline character support for media file
 Use `-crlf` switch in `.gitattributes` (for example `*.mov filter=media -crlf`) or config option `core.autocrlf = false`.
 
 If installing on windows, you might run into a problem verifying certificates
-for S3 or something. If that happens, modify
-
-	C:\Ruby191\lib\ruby\gems\1.9.1\gems\right_http_connection-1.2.4\lib\right_http_connection.rb
-
-And add at line 310, right before `@http.start`:
-
-      @http.verify_mode     = OpenSSL::SSL::VERIFY_NONE
+for S3 or something. If that happens, see the [instructions in this Gist for how
+to update your RubyGems to the proper certificates](https://gist.github.com/luislavena/f064211759ee0f806c88).
 
 ## Copyright
 

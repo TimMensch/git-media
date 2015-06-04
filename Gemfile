@@ -1,2 +1,11 @@
-source 'http://rubygems.org'
+source 'https://rubygems.org'
 gemspec
+
+gem 'trollop'
+gem 's3'
+gem 'ruby-atmos-pure'
+gem 'right_aws'
+gem 'net_dav', :git => 'https://github.com/devrandom/net_dav.git', :require => 'net/dav'
+
+gem 'netrc'
+#gem 'curb', :require => false

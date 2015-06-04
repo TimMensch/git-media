@@ -2,10 +2,10 @@
 
 Gem::Specification.new do |s|
   s.name = %q{git-media}
-  s.version = "0.1.10"
+  s.version = "0.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Scott Chacon, Giles Goddard"]
+  s.authors = ["Scott Chacon", "Giles Goddard", "Alexander Lebedev"]
   s.date = %q{2014-07-24}
   s.default_executable = %q{git-media}
   s.executables = ["git-media"]
@@ -22,10 +22,13 @@ Gem::Specification.new do |s|
      "VERSION",
      "bin/git-media",
      "git-media.gemspec",
+     "lib/git-media/helpers/git_ops.rb",
      "lib/git-media/clear.rb",
      "lib/git-media/check.rb",
+     "lib/git-media/config.rb",
      "lib/git-media/filter-clean.rb",
      "lib/git-media/filter-smudge.rb",
+     "lib/git-media/filter-branch.rb",
      "lib/git-media/status.rb",
      "lib/git-media/list.rb",
      "lib/git-media/sync.rb",
@@ -36,8 +39,11 @@ Gem::Specification.new do |s|
      "lib/git-media/transport/scp.rb",
      "lib/git-media/transport/drive.rb",
      "lib/git-media/transport/hashstash.rb",
+     "lib/git-media/transport/webdav.rb",
      "lib/git-media/transport.rb",
-     "lib/git-media.rb"
+     "lib/git-media.rb",
+     "spec/media_spec.rb",
+     "spec/spec_helper.rb"
   ]
   s.has_rdoc = true
   s.homepage = %q{https://github.com/vitei/git-media/tree/bugfixes}
@@ -52,6 +58,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'right_aws'
   s.add_dependency 'net-ssh'
   s.add_dependency 'net-scp'
+  s.add_dependency 'google_drive'
   s.add_development_dependency 'jeweler'
   s.add_development_dependency 'rspec'
 

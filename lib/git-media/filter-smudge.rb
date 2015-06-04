@@ -2,6 +2,7 @@
 module GitMedia
   module FilterSmudge
 
+    
     def self.run! (filename)
       #can_download = false # TODO: read this from config and implement
 

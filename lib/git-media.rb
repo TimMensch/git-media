@@ -1,3 +1,6 @@
+require 'rubygems'
+require 'bundler/setup'
+
 require 'trollop'
 require 'fileutils'
 
@@ -28,13 +31,29 @@ module GitMedia
     return true
   end
 
+  def self.get_credentials_from_netrc(url)
+    require 'uri'
+    require 'netrc'
+
+    uri = URI(url)
+    hostname = uri.host
+    unless hostname
+      raise "Cannot identify hostname within git-media.webdavurl value"
+    end
+    netrc = Netrc.read
+    netrc[hostname]
+  end
+
   def self.get_transport
     transport = `git config git-media.transport`.chomp
 
     case transport
     when ""
       raise "git-media.transport not set"
+
     when "scp"
+      require 'git-media/transport/scp'
+
       user = `git config git-media.scpuser`.chomp
       host = `git config git-media.scphost`.chomp
       path = `git config git-media.scppath`.chomp
@@ -52,13 +71,18 @@ module GitMedia
       GitMedia::Transport::Scp.new(user, host, path, port)
 
     when "local"
+      require 'git-media/transport/local'
+
       path = `git config git-media.localpath`.chomp
       if path === ""
         raise "git-media.localpath not set for local transport"
       end
       require 'git-media/transport/local'
       GitMedia::Transport::Local.new(path)
+
     when "s3"
+      require 'git-media/transport/s3'
+
       bucket = `git config git-media.s3bucket`.chomp
       key = `git config git-media.s3key`.chomp
       secret = `git config git-media.s3secret`.chomp
@@ -73,8 +97,10 @@ module GitMedia
       end
       require 'git-media/transport/s3'
       GitMedia::Transport::S3.new(bucket, key, secret)
+
     when "atmos"
       require 'git-media/transport/atmos_client'
+
       endpoint = `git config git-media.endpoint`.chomp
       uid = `git config git-media.uid`.chomp
       secret = `git config git-media.secret`.chomp
@@ -92,6 +118,7 @@ module GitMedia
         raise "git-media.secret not set for atmos transport"
       end
       GitMedia::Transport::AtmosClient.new(endpoint, uid, secret, tag)
+
     when "drive"
       require 'git-media/transport/drive'
       email = `git config git-media.email`.chomp
@@ -114,6 +141,29 @@ module GitMedia
       origin = `git config remote.origin.url`
 
       GitMedia::Transport::HashStash.new(host,port,origin)
+
+    when "webdav"
+      require 'git-media/transport/webdav'
+
+      url = `git config git-media.webdavurl`.chomp
+      user = `git config git-media.webdavuser`.chomp
+      password = `git config git-media.webdavpassword`.chomp
+      verify_server = `git config git-media.webdavverifyserver`.chomp == 'true'
+      binary_transfer = `git config git-media.webdavbinarytransfer`.chomp == 'true'
+      if url == ""
+        raise "git-media.webdavurl not set for webdav transport"
+      end
+      if user == ""
+        user, password = self.get_credentials_from_netrc(url)
+      end
+      if !user
+        raise "git-media.webdavuser not set for webdav transport"
+      end
+      if !password
+        raise "git-media.webdavpassword not set for webdav transport"
+      end
+      GitMedia::Transport::WebDav.new(url, user, password, verify_server, binary_transfer)
+
     else
       raise "Invalid transport #{transport}"
     end
@@ -125,6 +175,10 @@ module GitMedia
 
   module Application
     def self.run!
+
+      if !system('git rev-parse')
+        return
+      end
 
       cmd = ARGV.shift # get the subcommand
 
@@ -150,14 +204,25 @@ module GitMedia
         when 'status'
           require 'git-media/status'
           require 'git-media/config'
-          Trollop::options do
+
+          opts = Trollop::options do
             opt :force, "Force status"
+            opt :short, "Short status"
           end
-          GitMedia::Status.run!
+          GitMedia::Status.run!(opts)
           GitMedia::Config.run!(:status)
 		    when 'list'
 		      require 'git-media/list'
 		      GitMedia::List.run!
+        when 'retroactively-apply'
+          require 'git-media/filter-branch'
+          GitMedia::FilterBranch.clean!
+          arg2 = "--index-filter 'git media index-filter #{ARGV.shift}'"
+          system("git filter-branch #{arg2} --tag-name-filter cat -- --all")
+          GitMedia::FilterBranch.clean!
+        when 'index-filter'
+          require 'git-media/filter-branch'
+          GitMedia::FilterBranch.run!
         when 'install'
           require 'git-media/config'
           GitMedia::Config.run!(:install)
@@ -167,15 +232,15 @@ module GitMedia
         else
 	       print <<EOF
 usage: git media sync|download|status|list|clear|check
-  
+
   sync      Sync files with remote server
   download  Download files that are missing; don't upload any files
   status    Show files that are waiting to be uploaded and file size
   list      List local cache and corresponding media file
   clear     Upload and delete the local cache of media files
   check     Check local media cache and download any corrupt files
-  install   Set up the attributes filter settings in git config  
-  uninstall Removes the attributes filter settings in git config  
+  install   Set up the attributes filter settings in git config
+  uninstall Removes the attributes filter settings in git config
 EOF
       end
     end
