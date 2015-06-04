@@ -24,11 +24,11 @@ module GitMedia
       end
 
       def exist?(file)
-        if `ssh #{@user}@#{@host} #{@sshport} [ -f "#{file}" ] && echo 1 || echo 0`.chomp == "1"
+        if `ssh #{@user}@#{@host} #{@sshport} '[ -f "#{file}" ]' && echo 1 || echo 0`.chomp.strip == "1"
           puts file + " exists"
           return true
         else
-          puts file + " doesn't exists"
+          puts file + " doesn't exist"
           return false
         end
       end
@@ -62,13 +62,13 @@ module GitMedia
         puts sha+" upload fail"
         return false
       end
-      
+
       def get_unpushed(files)
         files.select do |f|
           !self.exist?(File.join(@path, f))
         end
       end
-      
+
     end
   end
 end
