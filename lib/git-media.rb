@@ -31,6 +31,16 @@ module GitMedia
     return true
   end
 
+  def self.all_cache
+    media_buffer = GitMedia.get_media_buffer
+    files = Dir.chdir(media_buffer) { Dir.glob('**/*') }
+    files.select! { |f|
+      path = File.join(media_buffer,f)
+      !File.directory?(path)
+    }
+    files.map{ |item| item[3..-1] }
+  end
+
   def self.get_credentials_from_netrc(url)
     require 'uri'
     require 'netrc'

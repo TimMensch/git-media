@@ -25,9 +25,9 @@ module GitMedia
         end
       end
 
-      def exist?(file)
+      def exist?(sha)
     		Net::SSH.start(@host, @user, {:port => @sshport}) do |ssh|
-		    	return ssh.exec!('[ -f '+file+' ] && echo 1 || echo 0').chomp.strip == "1"
+		    	return ssh.exec!('[ -f '+File.join(@path, sha)+' ] && echo 1 || echo 0').chomp.strip == "1"
         end
         return false
       end
@@ -54,13 +54,6 @@ module GitMedia
           return false
         end
       end
-
-      def get_unpushed(files)
-        files.select do |f|
-          !self.exist?(File.join(@path, f))
-        end
-      end
-
     end
   end
 end

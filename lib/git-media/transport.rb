@@ -14,7 +14,7 @@ module GitMedia
 
 
       ## OVERWRITE ##
-      
+
       def exist?(file)
         false
       end
@@ -26,18 +26,24 @@ module GitMedia
       def put_file(sha, to_file)
         false
       end
-      
+
       def get_unpushed(files)
+        media_buffer = GitMedia.get_media_buffer
         files.select do |f|
-          !exist?(f)
+            path = File.join(media_buffer,f)
+            if File.directory?(path)
+                false
+            else
+                !exist?(f)
+            end
         end
       end
-      
+
       def needs_push(sha)
         return !exist?(sha)
       end
 
-      
+
     end
   end
 end
